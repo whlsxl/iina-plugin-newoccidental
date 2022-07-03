@@ -1,0 +1,24 @@
+{
+  "name": "New Occidental",
+  "identifier": "io.iina.newoccidental",
+  "version": "0.1.0",
+  "ghVersion": 1,
+  "ghRepo": "whlsxl/iina-plugin-newoccidental",
+  "description": "Learn any language in IINA",
+  "author": {
+    "name": "Hailong Wang",
+    "url": "https://hlong.wang"
+  },
+  "helpPage": "https://github.com/whlsxl/iina-plugin-newoccidental/issues",
+  "entry": "dist/index.js",
+  "globalEntry": "dist/global.js",
+  "permissions": ["show-osd", "video-overlay", "file-system"],
+  "subtitleProviders": [{ "id": "demo", "name": "Subtitle API Demo" }],
+  "sidebarTab": { "name": "Demo" },
+  "preferencesPage": "pref.html",
+  "preferenceDefaults": {
+    "keyNum": 10,
+    "keyString": "hello",
+    "keyBool": true
+  }
+}

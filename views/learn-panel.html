@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Standalone Window</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      }
+
+      .container {
+        padding: 8px;
+      }
+
+      /* The container */
+      .container {
+        display: block;
+        position: relative;
+        padding-left: 35px;
+        margin-bottom: 12px;
+        cursor: pointer;
+        font-size: 22px;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+      }
+
+      /* Hide the browser's default checkbox */
+      .container input {
+        position: absolute;
+        opacity: 0;
+        cursor: pointer;
+        height: 0;
+        width: 0;
+      }
+
+      /* Create a custom checkbox */
+      .checkmark {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 25px;
+        width: 25px;
+        background-color: #eee;
+      }
+
+      /* On mouse-over, add a grey background color */
+      .container:hover input ~ .checkmark {
+        background-color: #ccc;
+      }
+
+      /* When the checkbox is checked, add a blue background */
+      .container input:checked ~ .checkmark {
+        background-color: #2196f3;
+      }
+
+      /* Create the checkmark/indicator (hidden when not checked) */
+      .checkmark:after {
+        content: "";
+        position: absolute;
+        display: none;
+      }
+
+      /* Show the checkmark when checked */
+      .container input:checked ~ .checkmark:after {
+        display: block;
+      }
+
+      /* Style the checkmark/indicator */
+      .container .checkmark:after {
+        left: 9px;
+        top: 5px;
+        width: 5px;
+        height: 10px;
+        border: solid white;
+        border-width: 0 3px 3px 0;
+        -webkit-transform: rotate(45deg);
+        -ms-transform: rotate(45deg);
+        transform: rotate(45deg);
+      }
+    </style>
+  </head>
+
+  <body>
+    <div><button id="status_btn" state="stop">Start learn</button></div>
+    <div><button id="seeking_btn">Seeking</button></div>
+    <div class="flow">
+      <label class="container"
+        >Listen
+        <input id="listen-checkbox" type="checkbox" checked="checked" />
+        <span class="checkmark"></span>
+      </label>
+      <label class="container"
+        >Learning subtitle
+        <input id="learning-checkbox" type="checkbox" checked="checked" />
+        <span class="checkmark"></span>
+      </label>
+      <label class="container"
+        >Native & Learning subtitle
+        <input id="native-checkbox" type="checkbox" checked="checked" />
+        <span class="checkmark"></span>
+      </label>
+      <label class="container"
+        >Listen Again
+        <input id="listen-again-checkbox" type="checkbox" checked="checked" />
+        <span class="checkmark"></span>
+      </label>
+      <label class="container"
+        >Follow read
+        <input id="follow-checkbox" type="checkbox" checked="checked" />
+        <span class="checkmark"></span>
+      </label>
+    </div>
+    <div class="subtitle_select learn_language">
+      <label for="learn_language">Language to learn</label>
+      <select name="learn_language" id="learn_language">
+        <option nosubtitle selected>Loading subtitle</option>
+      </select>
+    </div>
+    <div class="bilingual_input native_language">
+      <input id="bilingual_checkbox" type="checkbox" />
+      <label class="bilingual_subtitles">Bilingual subtitles?</label>
+    </div>
+    <div class="subtitle_select native_language">
+      <label for="native_language">Native language</label>
+      <select name="native_language" id="native_language">
+        <option nosubtitle selected>Loading subtitle</option>
+      </select>
+    </div>
+    <div class="container">
+      <p>Now Playing: <span id="title"></span></p>
+      <p>Paused: <span id="status"></span></p>
+      <p>Volume: <span id="volume"></span></p>
+      <div><button id="pause-btn">Toggle Pause</button></div>
+      <div>
+        <button id="volume-btn">Set volume to</button>
+        <input type="number" id="volume-input" />
+      </div>
+    </div>
+    <script src="../dist/learn-panel.js"></script>
+    <script src="eruda.js"></script>
+    <script>
+      eruda.init();
+    </script>
+  </body>
+</html>
