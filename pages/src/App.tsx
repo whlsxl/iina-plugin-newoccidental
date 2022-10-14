@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useReducer } from "react";
 // import 'antd/es/button/style/css';
 // import 'antd/es/card/style/css';
 import {
@@ -11,11 +11,15 @@ import {
   Form,
   Checkbox,
   Button,
-  Dropdown,
   Menu,
+  Dropdown,
 } from "antd";
 import { ColumnsType } from "antd/lib/table";
 import { useImmer } from "use-immer";
+import { messageReducer } from "./reducers/message";
+import { useEffect } from "react";
+import { SubMessage } from "../../src/constants";
+
 // import { ColumnsType } from 'antd/lib/table';
 
 interface DataType {
@@ -53,19 +57,19 @@ const data: DataType[] = [
     name: "Follow read",
   },
 ];
-const rowSelection = {
-  onChange: (selectedRowKeys: React.Key[], selectedRows: DataType[]) => {
-    console.log(
-      `selectedRowKeys: ${selectedRowKeys}`,
-      "selectedRows: ",
-      selectedRows,
-    );
-  },
-  getCheckboxProps: (record: DataType) => ({
-    disabled: record.name === "Disabled User", // Column configuration not to be checked
-    name: record.name,
-  }),
-};
+// const rowSelection = {
+//   onChange: (selectedRowKeys: React.Key[], selectedRows: DataType[]) => {
+//     console.log(
+//       `selectedRowKeys: ${selectedRowKeys}`,
+//       "selectedRows: ",
+//       selectedRows,
+//     );
+//   },
+//   getCheckboxProps: (record: DataType) => ({
+//     disabled: record.name === "Disabled User", // Column configuration not to be checked
+//     name: record.name,
+//   }),
+// };
 
 function App() {
   const [selectedRowKeys, setSelectedRowKeys] = useImmer<string[]>([]);
@@ -73,7 +77,7 @@ function App() {
 
   const selectRow = (record: DataType) => {
     const newSelectedRowKeys = [...selectedRowKeys];
-    if (newSelectedRowKeys.indexOf(record.key) >= 0) {
+    if (newSelectedRowKeys.includes(record.key)) {
       newSelectedRowKeys.splice(newSelectedRowKeys.indexOf(record.key), 1);
     } else {
       newSelectedRowKeys.push(record.key);
@@ -85,6 +89,30 @@ function App() {
     const keys = selectedRowKeys as string[];
     setSelectedRowKeys(keys);
   };
+  const onClick = async (data) => {
+    console.log(data);
+    console.log("click");
+
+    iina.onMessage("updateUI", (message) => {
+      console.log("updateUI");
+      console.log(message);
+    });
+    iina.postMessage("loadingSubAction");
+  };
+
+  const initialState = {
+    learningSub: [],
+    nativeSub: [],
+  };
+
+  const [state, dispatch] = useReducer(messageReducer, initialState);
+  useEffect(() => {
+    iina.onMessage("updateSub", (message: SubMessage) => {
+      console.log("updateSub");
+      console.log(message);
+      dispatch({ type: "updateSub", payload: message });
+    });
+  }, []);
 
   const menu = (
     <Menu
@@ -101,10 +129,12 @@ function App() {
       ]}
     />
   );
+  console.log(menu);
+
   return (
     <div className="App" style={{ padding: "24px" }}>
       <Row gutter={16} justify="center">
-        <Col className="gutter-row" span={16}>
+        <Col xs={24} md={16}>
           <Card
             // title="Control"
             headStyle={{ textAlign: "center" }}
@@ -113,14 +143,16 @@ function App() {
           >
             {/* <Divider orientation="center">Learning subtitle</Divider> */}
             <div style={{ paddingTop: "24px" }}>
-              <Button type="primary">Start Learn</Button>
+              <Button type="primary" onClick={onClick}>
+                Start Learn
+              </Button>
               <Dropdown.Button style={{ marginLeft: "8px" }} overlay={menu}>
-                Seek subtitle
+                Subtitle Indexing
               </Dropdown.Button>
             </div>
           </Card>
         </Col>
-        <Col className="gutter-row" span={16}>
+        <Col xs={24} md={16}>
           <Card
             // title="Process"
             headStyle={{ textAlign: "center" }}
@@ -148,7 +180,7 @@ function App() {
             />
           </Card>
         </Col>
-        <Col className="gutter-row" span={16}>
+        <Col xs={24} md={16}>
           <Card
             // title={<di style={{ textAlign: "center" }}>Configuration</div>}
             hoverable
@@ -161,10 +193,14 @@ function App() {
                 Learning subtitle
               </Divider> */}
               <Form.Item label="Learning subtitle">
-                <Select placeholder="Please select">
-                  <Select.Option value="jack">Jack</Select.Option>
-                  <Select.Option value="lucy">Lucy</Select.Option>
-                  <Select.Option value="tom">Tom</Select.Option>
+                <Select placeholder="Only support External Subtitle">
+                  {state.learningSub.map((sub) => {
+                    return (
+                      <Select.Option key={sub.id} value={sub.title}>
+                        {`#${sub.id} ${sub.title}`}
+                      </Select.Option>
+                    );
+                  })}
                 </Select>
               </Form.Item>
               <Form.Item
@@ -172,9 +208,13 @@ function App() {
                 label="Native & Learning subtitle"
               >
                 <Select placeholder="Please select">
-                  <Select.Option value="jack">Jack</Select.Option>
-                  <Select.Option value="lucy">Lucy</Select.Option>
-                  <Select.Option value="tom">Tom</Select.Option>
+                  {state.nativeSub.map((sub) => {
+                    return (
+                      <Select.Option key={sub.id} value={sub.title}>
+                        {`#${sub.id} ${sub.title}`}
+                      </Select.Option>
+                    );
+                  })}
                 </Select>
               </Form.Item>
               <Form.Item>

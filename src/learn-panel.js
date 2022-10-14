@@ -126,8 +126,8 @@ function init() {
     .getElementById("bilingual_checkbox")
     .addEventListener("change", postSubAction);
 
-  document.getElementById("seeking_btn").addEventListener("click", () => {
-    iina.postMessage("test");
+  document.getElementById("loading_sub_btn").addEventListener("click", () => {
+    iina.postMessage("loadingSubAction");
   });
   // Update UI
   // iina.onMessage("updateProcessUI", function (message) {

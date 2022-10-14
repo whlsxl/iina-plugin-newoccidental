@@ -1,21 +1,24 @@
 // const { console, core, global, mpv, event } = iina;
-let langs = require("langs");
+import { getLangName } from "./tool";
 
-enum LearningInfoStatus {
+export enum LearningInfoStatus {
   Start = "Start",
   Stop = "Stop",
+  Loading = "Loading",
 }
 
-class SubContent {
+// A sentence of subtitle info
+export class SubContent {
   start: number;
   end: number;
   text: string;
 }
-
-class SubContents {
+// A paragraph of subtitle info
+export class SubContents {
   contents: Array<SubContent>;
   beginTime: number;
   endTime: number;
+  // Estimated subtitle duration
   loadingDuration: number;
   constructor() {
     this.contents = [];
@@ -59,16 +62,17 @@ class SubContents {
   }
 }
 
-class SubInfo {
+export class SubInfo {
   id: number;
   title: string;
+  filename: string;
   defaultSub: boolean;
   selected: boolean;
   external: boolean;
   // constructor() {}
 }
 
-class LearningInfo {
+export class LearningInfo {
   fileURL: string;
 
   status: LearningInfoStatus;
@@ -78,16 +82,27 @@ class LearningInfo {
   bilingual: boolean;
 
   subInfos: Array<SubInfo>;
-  subContents: Array<SubContents>;
+  subContentsList: Array<SubContents>;
 
   constructor() {
     this.bilingual = false;
     this.process = {};
-    this.subContents = [];
+    this.subContentsList = [];
+  }
+
+  getLearningSub() {
+    return this.subInfos.filter(function (sub) {
+      return sub.external;
+    });
   }
 }
 
-function trackListToSubList(track_list_json: string) {
+export class SubMessage {
+  learningSub: Array<SubInfo>;
+  nativeSub: Array<SubInfo>;
+}
+
+export function trackListToSubList(track_list_json: string) {
   const track_list = JSON.parse(track_list_json);
   let sub_list: Array<SubInfo> = [];
   for (const track of track_list) {
@@ -95,22 +110,24 @@ function trackListToSubList(track_list_json: string) {
       let sub = new SubInfo();
       sub.id = track.id;
       sub.defaultSub = track.default;
-      if (track.title) {
-        sub.title = track.title;
-      } else {
-        let title = "";
-        let lang_name = langs.where("2T", track.lang);
-        if (lang_name) {
-          title += "[" + lang_name.name + "]";
-        }
-        if (track.default) {
-          title += "(Default)";
-        }
-        if (title === "") {
-          title = "Sub" + track.id;
-        }
-        sub.title = title;
+
+      let title = "";
+      let lang_name = getLangName(track.lang);
+      if (lang_name) {
+        title += "[" + lang_name + "] ";
       }
+      if (track.title) {
+        title += track.title;
+      }
+      if (track.default) {
+        title += "(Default)";
+      }
+      if (title === "") {
+        title = "Sub" + track.id;
+      }
+      sub.filename = track.external ? track.title : "";
+      sub.title = title;
+
       if (track.selected !== undefined) {
         sub.selected = track.selected;
       }
@@ -120,5 +137,3 @@ function trackListToSubList(track_list_json: string) {
   }
   return sub_list;
 }
-
-export { LearningInfo, SubContents, SubContent, trackListToSubList };
