@@ -8,3 +8,7 @@ export function getLangName(t2: string): string | null {
   }
   return null;
 }
+
+export function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}

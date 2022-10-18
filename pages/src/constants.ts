@@ -1,6 +1,17 @@
 // const { console, core, global, mpv, event } = iina;
 import { getLangName } from "./tool";
 
+export enum MessageType {
+  // frontend -> backend
+  PostProcessAction = "PostProcessAction",
+  IndexSubAction = "IndexSubAction",
+  StopIndexSubAction = "StopIndexSubAction",
+
+  // backend -> frontend
+  UpdateSub = "UpdateSub",
+  UpdateSubProcess = "UpdateSubProcess",
+}
+
 export enum LearningInfoStatus {
   Start = "Start",
   Stop = "Stop",
@@ -18,7 +29,7 @@ export class SubContents {
   contents: Array<SubContent>;
   beginTime: number;
   endTime: number;
-  // Estimated subtitle duration
+  // Estimated subtitle duration, 0 is all
   loadingDuration: number;
   constructor() {
     this.contents = [];
@@ -76,13 +87,15 @@ export class LearningInfo {
   fileURL: string;
 
   status: LearningInfoStatus;
-  process: Object;
+  process: unknown;
   learningID: number;
   nativeID: number;
   bilingual: boolean;
 
   subInfos: Array<SubInfo>;
   subContentsList: Array<SubContents>;
+
+  fileDuration: number;
 
   constructor() {
     this.bilingual = false;
@@ -104,15 +117,15 @@ export class SubMessage {
 
 export function trackListToSubList(track_list_json: string) {
   const track_list = JSON.parse(track_list_json);
-  let sub_list: Array<SubInfo> = [];
+  const sub_list: Array<SubInfo> = [];
   for (const track of track_list) {
     if (track.type === "sub") {
-      let sub = new SubInfo();
+      const sub = new SubInfo();
       sub.id = track.id;
       sub.defaultSub = track.default;
 
       let title = "";
-      let lang_name = getLangName(track.lang);
+      const lang_name = getLangName(track.lang);
       if (lang_name) {
         title += "[" + lang_name + "] ";
       }

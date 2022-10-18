@@ -6,7 +6,9 @@ import {
   SubContents,
   SubContent,
   SubMessage,
-} from "./constants";
+  MessageType,
+} from "../pages/src/constants";
+import { sleep } from "../pages/src/tool";
 
 console.log("index.ts");
 
@@ -15,6 +17,14 @@ let learningInfo = new LearningInfo();
 let loadingLearningSub: SubContents = undefined;
 // The API of mpv only have the function to get next subtitle.
 let loadingTask: string = undefined;
+let loadingBeginPos: number = undefined;
+
+function postToAll(action: string, data: any) {
+  if (panelLoaded) {
+    standaloneWindow.postMessage(action, data);
+  }
+  sidebar.postMessage(action, data);
+}
 
 function updateUI() {
   if (panelLoaded) {
@@ -28,10 +38,7 @@ function updateSub() {
     learningSub: learningInfo.getLearningSub(),
     nativeSub: learningInfo.subInfos,
   };
-  if (panelLoaded) {
-    standaloneWindow.postMessage("updateSub", data);
-  }
-  sidebar.postMessage("updateSub", data);
+  postToAll(MessageType.UpdateSub, data);
 }
 
 function getSub(): SubContent {
@@ -44,10 +51,16 @@ function getSub(): SubContent {
 
 // generate a paragraph subtitle
 function generateSubContent(begin: number, duration: number) {
-  core.pause();
+  if (!core.status.paused) {
+    core.pause();
+  }
+  core.seekTo(begin);
+  sleep(500);
+
   loadingLearningSub = new SubContents();
   loadingLearningSub.beginTime = begin;
   loadingLearningSub.loadingDuration = duration;
+
   let lastSub: SubContent = undefined;
   // If get the next subtitle have 5 times same, will stop
   let sameTime = 0;
@@ -64,17 +77,32 @@ function generateSubContent(begin: number, duration: number) {
         finishLoadSub();
         return;
       }
-      if (sameTime > 5) {
+      if (sameTime > 10) {
         finishLoadSub();
       }
       const sub = getSub();
+      // post update process message
+      let duration = loadingLearningSub.loadingDuration;
+      if (duration === 0) {
+        duration = learningInfo.fileDuration;
+      }
+      postToAll(MessageType.UpdateSubProcess, {
+        indexSubProcess: Math.ceil(
+          ((sub.end - loadingLearningSub.beginTime) / duration) * 100,
+        ),
+        isIndexingSub: true,
+      });
 
-      if (lastSub && sub.start === lastSub.start) {
+      if (lastSub && sub.text === lastSub.text) {
         sameTime++;
+        lastSub = sub;
         mpv.command("sub-seek", ["1", "primary"]);
         return;
       }
-      if (sub.text !== undefined || sub.text === "") {
+      if (
+        (sub.text !== undefined || sub.text === "") &&
+        !(lastSub && sub.start === lastSub.start)
+      ) {
         loadingLearningSub.addLearningSub(sub);
         mpv.command("sub-seek", ["1", "primary"]);
       }
@@ -84,18 +112,37 @@ function generateSubContent(begin: number, duration: number) {
   }, 500);
 }
 
+// Action
+function indexSubAction(duration) {
+  if (!loadingLearningSub) {
+    loadingBeginPos = core.status.position;
+    generateSubContent(
+      duration === "0" ? 0 : core.status.position,
+      parseInt(duration),
+    );
+  }
+  // updateUI();
+}
+
 // Finish generate subtitle
 function finishLoadSub(): boolean {
   if (loadingTask != undefined) {
     clearInterval(loadingTask);
     loadingTask = undefined;
   }
+  if (loadingBeginPos) {
+    core.seekTo(loadingBeginPos);
+    loadingBeginPos = undefined;
+  }
   if (!loadingLearningSub) {
     return false;
   }
+
+  postToAll(MessageType.UpdateSubProcess, {
+    isIndexingSub: false,
+  });
   loadingLearningSub.endTime = core.status.position;
   learningInfo.subContentsList.push(loadingLearningSub);
-  core.seekTo(loadingLearningSub.beginTime);
   loadingLearningSub = undefined;
 }
 
@@ -106,7 +153,11 @@ function loadPanel() {
   console.log("loadPanel");
   // standaloneWindow.loadFile("views/index.html");
   standaloneWindow.loadFile("views/index.html");
-  standaloneWindow.setProperty({ title: "Learning Panel" });
+  standaloneWindow.setProperty({ title: "Learning Panel", resizable: false });
+  standaloneWindow.setFrame(400, 840);
+  standaloneWindow.onMessage(MessageType.StopIndexSubAction, async (data) => {
+    finishLoadSub();
+  });
   standaloneWindow.onMessage("requestUpdate", async (data) => {
     console.log("standaloneWindow requestUpdate");
     standaloneWindow.postMessage("updateUI", learningInfo);
@@ -133,15 +184,13 @@ function loadPanel() {
     updateUI();
   });
 
-  standaloneWindow.onMessage("loadingSubAction", async () => {
-    if (loadingLearningSub) {
-      console.log("loadingSubAction");
-      finishLoadSub();
-    } else {
-      generateSubContent(core.status.position, 600);
-    }
-    updateUI();
-  });
+  standaloneWindow.onMessage(
+    MessageType.IndexSubAction,
+    async ({ duration }) => {
+      indexSubAction(duration);
+      updateUI();
+    },
+  );
 
   panelLoaded = true;
 }
@@ -156,12 +205,16 @@ function showLearnPanel() {
 sidebar.loadFile("views/index.html");
 
 // Update learning process checkbox status
-sidebar.onMessage("postProcessAction", async (data) => {
+sidebar.onMessage(MessageType.PostProcessAction, async (data) => {
   console.log("postProcessAction: ");
   core.pause();
   console.log("pausexxxxxxxxxxxx");
   console.log(JSON.stringify(data));
   learningInfo.process = data;
+});
+
+sidebar.onMessage(MessageType.IndexSubAction, async ({ duration }) => {
+  indexSubAction(duration);
 });
 
 menu.addItem(
@@ -180,6 +233,9 @@ event.on("mpv.track-list.changed", () => {
   console.log(track_list);
 
   learningInfo.subInfos = trackListToSubList(track_list);
+  console.log(JSON.stringify(learningInfo.subInfos));
+
+  learningInfo.fileDuration = mpv.getNumber("duration");
   const selected = learningInfo.subInfos.find((subInfo) => subInfo.selected);
   if (
     (!learningInfo.learningID ||

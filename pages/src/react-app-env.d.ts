@@ -1,3 +1,3 @@
 /// <reference types="react-scripts" />
 
-declare var iina: any;
+declare let iina: any;

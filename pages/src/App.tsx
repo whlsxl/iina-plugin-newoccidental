@@ -13,12 +13,17 @@ import {
   Button,
   Menu,
   Dropdown,
+  Space,
+  Modal,
+  Progress,
 } from "antd";
+import { DownOutlined } from "@ant-design/icons";
 import { ColumnsType } from "antd/lib/table";
 import { useImmer } from "use-immer";
-import { messageReducer } from "./reducers/message";
+import { AppState, messageReducer, UpdateSubProcess } from "./reducers/message";
 import { useEffect } from "react";
-import { SubMessage } from "../../src/constants";
+import { MessageType, SubMessage } from "./constants";
+import EllipsisMiddle from "./components/EllipsisMiddle";
 
 // import { ColumnsType } from 'antd/lib/table';
 
@@ -75,6 +80,28 @@ function App() {
   const [selectedRowKeys, setSelectedRowKeys] = useImmer<string[]>([]);
   const [form] = Form.useForm();
 
+  const initialState: AppState = {
+    learningSub: [],
+    nativeSub: [],
+    isIndexingSub: false,
+    indexSubProcess: 0,
+  };
+
+  const [state, dispatch] = useReducer(messageReducer, initialState);
+
+  useEffect(() => {
+    iina.onMessage(MessageType.UpdateSub, (message: SubMessage) => {
+      dispatch({ type: "updateSub", payload: message });
+    });
+    iina.onMessage(
+      MessageType.UpdateSubProcess,
+      (process: UpdateSubProcess) => {
+        dispatch({ type: "updateSubProcess", process });
+      },
+    );
+  }, []);
+
+  // Actions
   const selectRow = (record: DataType) => {
     const newSelectedRowKeys = [...selectedRowKeys];
     if (newSelectedRowKeys.includes(record.key)) {
@@ -97,39 +124,36 @@ function App() {
       console.log("updateUI");
       console.log(message);
     });
-    iina.postMessage("loadingSubAction");
+    // iina.postMessage("loadingSubAction");
   };
 
-  const initialState = {
-    learningSub: [],
-    nativeSub: [],
+  const loadingStop = () => {
+    dispatch({ type: "stopIndexSub" });
   };
 
-  const [state, dispatch] = useReducer(messageReducer, initialState);
-  useEffect(() => {
-    iina.onMessage("updateSub", (message: SubMessage) => {
-      console.log("updateSub");
-      console.log(message);
-      dispatch({ type: "updateSub", payload: message });
-    });
-  }, []);
+  const indexingSubClick = async (data) => {
+    iina.postMessage(MessageType.IndexSubAction, { duration: data.key });
+  };
 
   const menu = (
     <Menu
-      // onClick={onMenuClick}
+      onClick={indexingSubClick}
       items={[
         {
-          key: "5min",
+          key: 0,
+          label: "All",
+        },
+        {
+          key: 300,
           label: "5 min",
         },
         {
-          key: "10min",
+          key: 600,
           label: "10 min",
         },
       ]}
     />
   );
-  console.log(menu);
 
   return (
     <div className="App" style={{ padding: "24px" }}>
@@ -146,9 +170,14 @@ function App() {
               <Button type="primary" onClick={onClick}>
                 Start Learn
               </Button>
-              <Dropdown.Button style={{ marginLeft: "8px" }} overlay={menu}>
-                Subtitle Indexing
-              </Dropdown.Button>
+              <Dropdown overlay={menu}>
+                <Button style={{ marginLeft: "8px" }}>
+                  <Space>
+                    Index Subtitle
+                    <DownOutlined />
+                  </Space>
+                </Button>
+              </Dropdown>
             </div>
           </Card>
         </Col>
@@ -197,7 +226,9 @@ function App() {
                   {state.learningSub.map((sub) => {
                     return (
                       <Select.Option key={sub.id} value={sub.title}>
-                        {`#${sub.id} ${sub.title}`}
+                        <EllipsisMiddle suffixCount={20}>
+                          {`#${sub.id} ${sub.title}`}
+                        </EllipsisMiddle>
                       </Select.Option>
                     );
                   })}
@@ -211,7 +242,9 @@ function App() {
                   {state.nativeSub.map((sub) => {
                     return (
                       <Select.Option key={sub.id} value={sub.title}>
-                        {`#${sub.id} ${sub.title}`}
+                        <EllipsisMiddle suffixCount={20}>
+                          {`#${sub.id} ${sub.title}`}
+                        </EllipsisMiddle>
                       </Select.Option>
                     );
                   })}
@@ -224,6 +257,34 @@ function App() {
           </Card>
         </Col>
       </Row>
+
+      <Modal
+        title={
+          <div
+            style={{
+              textAlign: "center",
+            }}
+          >
+            Indexing Subtitle
+          </div>
+        }
+        onCancel={loadingStop}
+        centered={true}
+        closable={false}
+        maskClosable={false}
+        keyboard={false}
+        open={state.isIndexingSub}
+        width={300}
+        footer={[
+          <Button key="stop" danger onClick={loadingStop}>
+            Stop
+          </Button>,
+        ]}
+      >
+        <div style={{ textAlign: "center" }}>
+          <Progress percent={state.indexSubProcess} />
+        </div>
+      </Modal>
     </div>
   );
 }

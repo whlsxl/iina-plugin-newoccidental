@@ -1,22 +1,29 @@
 import { Reducer } from "react";
 import {
+  MessageType,
   // LearningInfo,
   // trackListToSubList,
   // SubContents,
   // SubContent,
   SubInfo,
   SubMessage,
-} from "../../../src/constants";
+} from "../constants";
 // import produce from "immer";
 
 export type MessageAction =
   | { type: "updateSub"; payload: SubMessage }
-  | { type: "failure"; error: string };
+  | { type: "stopIndexSub" }
+  | { type: "updateSubProcess"; process: UpdateSubProcess };
 
+export interface UpdateSubProcess {
+  indexSubProcess: number;
+  isIndexingSub: boolean;
+}
 export interface AppState {
   learningSub: Array<SubInfo>;
   nativeSub: Array<SubInfo>;
-  // count: number;
+  isIndexingSub: boolean;
+  indexSubProcess: number;
 }
 
 export const messageReducer: Reducer<AppState, MessageAction> = (
@@ -28,6 +35,19 @@ export const messageReducer: Reducer<AppState, MessageAction> = (
       return {
         ...state,
         ...action.payload,
+      };
+    }
+    case "stopIndexSub": {
+      iina.postMessage(MessageType.StopIndexSubAction);
+      return state;
+    }
+    case "updateSubProcess": {
+      if (!action.process.indexSubProcess) {
+        action.process.indexSubProcess = state.indexSubProcess;
+      }
+      return {
+        ...state,
+        ...action.process,
       };
     }
     default:

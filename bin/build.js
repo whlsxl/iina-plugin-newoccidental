@@ -15,5 +15,5 @@ if (shell.env["DEBUG"]) {
   shell.cp("debug/eruda.js", "views/");
 }
 shell.rm("-rf", "dist");
-shell.mkdir("dist");
+// shell.mkdir("dist");
 shell.exec("parcel build .");
