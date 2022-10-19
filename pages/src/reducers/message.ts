@@ -19,6 +19,15 @@ export interface UpdateSubProcess {
   indexSubProcess: number;
   isIndexingSub: boolean;
 }
+
+type NotificationType = "success" | "info" | "warning" | "error";
+
+export interface Notification {
+  type: NotificationType;
+  title: string;
+  message?: string;
+}
+
 export interface AppState {
   learningSub: Array<SubInfo>;
   nativeSub: Array<SubInfo>;

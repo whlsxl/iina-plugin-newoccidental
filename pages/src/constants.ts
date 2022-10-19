@@ -12,6 +12,7 @@ export enum MessageType {
   // backend -> frontend
   UpdateSub = "UpdateSub",
   UpdateSubProcess = "UpdateSubProcess",
+  PostNotification = "PostNotification",
 }
 
 export enum LearningInfoStatus {
@@ -115,6 +116,13 @@ export class LearningInfo {
 export interface SubMessage {
   learningSub: Array<SubInfo>;
   nativeSub: Array<SubInfo>;
+}
+
+type PostNotificationType = "success" | "info" | "warning" | "error";
+export interface PostNotification {
+  type?: PostNotificationType;
+  title: string;
+  message?: string;
 }
 
 export function trackListToSubList(track_list_json: string) {

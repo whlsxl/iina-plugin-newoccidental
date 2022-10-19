@@ -16,13 +16,14 @@ import {
   Space,
   Modal,
   Progress,
+  notification,
 } from "antd";
 import { DownOutlined } from "@ant-design/icons";
 import { ColumnsType } from "antd/lib/table";
 import { useImmer } from "use-immer";
 import { AppState, messageReducer, UpdateSubProcess } from "./reducers/message";
 import { useEffect } from "react";
-import { MessageType, SubMessage } from "./constants";
+import { MessageType, PostNotification, SubMessage } from "./constants";
 import EllipsisMiddle from "./components/EllipsisMiddle";
 
 // import { ColumnsType } from 'antd/lib/table';
@@ -99,6 +100,21 @@ function App() {
         dispatch({ type: "updateSubProcess", process });
       },
     );
+    iina.onMessage(MessageType.PostNotification, (noti: PostNotification) => {
+      if (noti.type) {
+        notification[noti.type]({
+          message: noti.title,
+          description: noti.message,
+          placement: "top",
+        });
+      } else {
+        notification.open({
+          message: noti.title,
+          description: noti.message,
+          placement: "top",
+        });
+      }
+    });
   }, []);
 
   // Actions

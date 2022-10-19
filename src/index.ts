@@ -39,8 +39,14 @@ function updateSub() {
 function bingdingOnMessage(window, type: "standaloneWindow" | "sidebar") {
   window.onMessage(MessageType.StopIndexSubAction, async (data) => {
     finishLoadSub();
+
+    postToAll(MessageType.PostNotification, {
+      type: "warning",
+      title: "Index Subtitle termined",
+    });
   });
 
+  // frontend request update UI
   window.onMessage(MessageType.RequestUpdateUIAction, async (data) => {
     console.log("window RequestUpdateUIAction");
     window.postMessage("updateUI", learningInfo);

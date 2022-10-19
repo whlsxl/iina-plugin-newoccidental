@@ -45,15 +45,19 @@ export function generateSubContent(begin: number, duration: number) {
     }
     if (loadingLearningSub) {
       if (
-        loadingLearningSub.loadingDuration !== 0 &&
-        core.status.position >
-          loadingLearningSub.beginTime + loadingLearningSub.loadingDuration
+        (loadingLearningSub.loadingDuration !== 0 &&
+          core.status.position >
+            loadingLearningSub.beginTime +
+              loadingLearningSub.loadingDuration) ||
+        sameTime > 10
       ) {
         finishLoadSub();
+
+        postToAll(MessageType.PostNotification, {
+          type: "success",
+          title: "Index Subtitle finished",
+        });
         return;
-      }
-      if (sameTime > 10) {
-        finishLoadSub();
       }
       const sub = getSub();
       // post update process message
