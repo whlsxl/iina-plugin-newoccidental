@@ -6,6 +6,8 @@ export enum MessageType {
   PostProcessAction = "PostProcessAction",
   IndexSubAction = "IndexSubAction",
   StopIndexSubAction = "StopIndexSubAction",
+  SelectSubAction = "SelectSubAction",
+  RequestUpdateUIAction = "RequestUpdateUIAction",
 
   // backend -> frontend
   UpdateSub = "UpdateSub",
@@ -110,7 +112,7 @@ export class LearningInfo {
   }
 }
 
-export class SubMessage {
+export interface SubMessage {
   learningSub: Array<SubInfo>;
   nativeSub: Array<SubInfo>;
 }

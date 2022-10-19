@@ -127,7 +127,16 @@ function App() {
     // iina.postMessage("loadingSubAction");
   };
 
-  const loadingStop = () => {
+  const selectSubEvent = async (data, subType) => {
+    console.log(data);
+    console.log(subType);
+
+    console.log("selectSub");
+
+    iina.postMessage(MessageType.SelectSubAction, { subType: data });
+  };
+
+  const stopIndexSubEvent = () => {
     dispatch({ type: "stopIndexSub" });
   };
 
@@ -222,10 +231,15 @@ function App() {
                 Learning subtitle
               </Divider> */}
               <Form.Item label="Learning subtitle">
-                <Select placeholder="Only support External Subtitle">
-                  {state.learningSub.map((sub) => {
+                <Select
+                  placeholder="Only support External Subtitle"
+                  onChange={(value) => {
+                    selectSubEvent(value, "learningSub");
+                  }}
+                >
+                  {state.learningSub.map((sub, index) => {
                     return (
-                      <Select.Option key={sub.id} value={sub.title}>
+                      <Select.Option key={index} value={sub.id}>
                         <EllipsisMiddle suffixCount={20}>
                           {`#${sub.id} ${sub.title}`}
                         </EllipsisMiddle>
@@ -238,10 +252,15 @@ function App() {
                 style={{ marginBottom: "8px" }}
                 label="Native & Learning subtitle"
               >
-                <Select placeholder="Please select">
-                  {state.nativeSub.map((sub) => {
+                <Select
+                  placeholder="Please select"
+                  onChange={(value) => {
+                    selectSubEvent(value, "nativeSub");
+                  }}
+                >
+                  {state.nativeSub.map((sub, index) => {
                     return (
-                      <Select.Option key={sub.id} value={sub.title}>
+                      <Select.Option key={index} value={sub.id}>
                         <EllipsisMiddle suffixCount={20}>
                           {`#${sub.id} ${sub.title}`}
                         </EllipsisMiddle>
@@ -268,7 +287,7 @@ function App() {
             Indexing Subtitle
           </div>
         }
-        onCancel={loadingStop}
+        onCancel={stopIndexSubEvent}
         centered={true}
         closable={false}
         maskClosable={false}
@@ -276,7 +295,7 @@ function App() {
         open={state.isIndexingSub}
         width={300}
         footer={[
-          <Button key="stop" danger onClick={loadingStop}>
+          <Button key="stop" danger onClick={stopIndexSubEvent}>
             Stop
           </Button>,
         ]}
