@@ -1,4 +1,5 @@
 // const { console, core, global, mpv, event } = iina;
+import { ProcessSelectArray } from "./reducers/message";
 import { getLangName } from "./tool";
 
 export enum MessageType {
@@ -8,11 +9,13 @@ export enum MessageType {
   StopIndexSubAction = "StopIndexSubAction",
   SelectSubAction = "SelectSubAction",
   RequestUpdateUIAction = "RequestUpdateUIAction",
+  ChangeConfigurationAction = "ChangeConfigurationAction",
 
   // backend -> frontend
   UpdateSub = "UpdateSub",
   UpdateSubProcess = "UpdateSubProcess",
   PostNotification = "PostNotification",
+  UpdateConfiguration = "UpdateConfiguration",
 }
 
 export enum LearningInfoStatus {
@@ -90,7 +93,7 @@ export class LearningInfo {
   fileURL: string;
 
   status: LearningInfoStatus;
-  process: unknown;
+  process: ProcessConfiguration;
   learningID: number;
   nativeID: number;
   bilingual: boolean;
@@ -102,7 +105,13 @@ export class LearningInfo {
 
   constructor() {
     this.bilingual = false;
-    this.process = {};
+    this.process = {
+      listen: true,
+      learning: true,
+      native: true,
+      again: false,
+      follow: false,
+    };
     this.subContentsList = [];
   }
 
@@ -123,6 +132,19 @@ export interface PostNotification {
   type?: PostNotificationType;
   title: string;
   message?: string;
+}
+
+export interface ProcessConfiguration {
+  listen: boolean;
+  learning: boolean;
+  native: boolean;
+  again: boolean;
+  follow: boolean;
+}
+
+export interface Configuration {
+  process: ProcessSelectArray;
+  bilingual: boolean;
 }
 
 export function trackListToSubList(track_list_json: string) {

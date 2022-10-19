@@ -47,9 +47,28 @@ function bingdingOnMessage(window, type: "standaloneWindow" | "sidebar") {
   });
 
   // frontend request update UI
-  window.onMessage(MessageType.RequestUpdateUIAction, async (data) => {
+  window.onMessage(MessageType.RequestUpdateUIAction, async () => {
     console.log("window RequestUpdateUIAction");
     window.postMessage("updateUI", learningInfo);
+    // TODO
+  });
+
+  window.onMessage(MessageType.ChangeConfigurationAction, async (data) => {
+    if (data.process) {
+      Object.keys(learningInfo.process).forEach((key) => {
+        learningInfo.process[key] = data.process.includes(key);
+      });
+    }
+    if (data.bilingual) {
+      learningInfo.bilingual = data.bilingual;
+    }
+    const process = Object.keys(learningInfo.process).filter((key) => {
+      return learningInfo.process[key];
+    });
+    postToAll(MessageType.UpdateConfiguration, {
+      process,
+      bilingual: learningInfo.bilingual,
+    });
   });
 
   // standaloneWindow.onMessage("postProcessAction", async (data) => {

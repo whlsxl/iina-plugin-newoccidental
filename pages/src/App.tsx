@@ -20,11 +20,22 @@ import {
 } from "antd";
 import { DownOutlined } from "@ant-design/icons";
 import { ColumnsType } from "antd/lib/table";
-import { useImmer } from "use-immer";
-import { AppState, messageReducer, UpdateSubProcess } from "./reducers/message";
+import {
+  AppState,
+  messageReducer,
+  ProcessSelectArray,
+  ProcessSelectKey,
+  UpdateSubProcess,
+} from "./reducers/message";
 import { useEffect } from "react";
-import { MessageType, PostNotification, SubMessage } from "./constants";
+import {
+  Configuration,
+  MessageType,
+  PostNotification,
+  SubMessage,
+} from "./constants";
 import EllipsisMiddle from "./components/EllipsisMiddle";
+import { CheckboxChangeEvent } from "antd/lib/checkbox";
 
 // import { ColumnsType } from 'antd/lib/table';
 
@@ -59,7 +70,7 @@ const data: DataType[] = [
     name: "Listen Again",
   },
   {
-    key: "read",
+    key: "follow",
     name: "Follow read",
   },
 ];
@@ -78,7 +89,6 @@ const data: DataType[] = [
 // };
 
 function App() {
-  const [selectedRowKeys, setSelectedRowKeys] = useImmer<string[]>([]);
   const [form] = Form.useForm();
 
   const initialState: AppState = {
@@ -86,6 +96,8 @@ function App() {
     nativeSub: [],
     isIndexingSub: false,
     indexSubProcess: 0,
+    process: [],
+    bilingual: false,
   };
 
   const [state, dispatch] = useReducer(messageReducer, initialState);
@@ -94,12 +106,18 @@ function App() {
     iina.onMessage(MessageType.UpdateSub, (message: SubMessage) => {
       dispatch({ type: "updateSub", payload: message });
     });
+
     iina.onMessage(
       MessageType.UpdateSubProcess,
       (process: UpdateSubProcess) => {
         dispatch({ type: "updateSubProcess", process });
       },
     );
+
+    iina.onMessage(MessageType.UpdateConfiguration, (config: Configuration) => {
+      dispatch({ type: "updateConfiguration", config });
+    });
+
     iina.onMessage(MessageType.PostNotification, (noti: PostNotification) => {
       if (noti.type) {
         notification[noti.type]({
@@ -118,20 +136,6 @@ function App() {
   }, []);
 
   // Actions
-  const selectRow = (record: DataType) => {
-    const newSelectedRowKeys = [...selectedRowKeys];
-    if (newSelectedRowKeys.includes(record.key)) {
-      newSelectedRowKeys.splice(newSelectedRowKeys.indexOf(record.key), 1);
-    } else {
-      newSelectedRowKeys.push(record.key);
-    }
-    setSelectedRowKeys(newSelectedRowKeys);
-  };
-
-  const onSelectedRowKeysChange = (selectedRowKeys: React.Key[]) => {
-    const keys = selectedRowKeys as string[];
-    setSelectedRowKeys(keys);
-  };
   const onClick = async (data) => {
     console.log(data);
     console.log("click");
@@ -217,18 +221,26 @@ function App() {
             <Divider orientation="center">Process</Divider>
             <Table
               // style={{ border: '1px solid rgba(0,0,0,.06)' }}
-              style={{ paddingTop: "1px" }}
+              style={{ paddingTop: "-8px" }}
               showHeader={false}
               pagination={false}
               columns={columns}
               onRow={(record) => ({
                 onClick: () => {
-                  selectRow(record);
+                  dispatch({
+                    type: "selectProcess",
+                    key: record.key as ProcessSelectKey,
+                  });
                 },
               })}
               rowSelection={{
-                selectedRowKeys,
-                onChange: onSelectedRowKeysChange,
+                selectedRowKeys: state.process,
+                onChange: (keys) => {
+                  dispatch({
+                    type: "selectProcessArray",
+                    process: keys as ProcessSelectArray,
+                  });
+                },
               }}
               dataSource={data}
             />
@@ -286,7 +298,17 @@ function App() {
                 </Select>
               </Form.Item>
               <Form.Item>
-                <Checkbox>Bilingual subtitles?</Checkbox>
+                <Checkbox
+                  checked={state.bilingual}
+                  onChange={(e: CheckboxChangeEvent) => {
+                    dispatch({
+                      type: "selectBilingual",
+                      bilingual: e.target.checked,
+                    });
+                  }}
+                >
+                  Bilingual subtitles?
+                </Checkbox>
               </Form.Item>
             </Form>
           </Card>
